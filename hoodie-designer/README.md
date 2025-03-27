@@ -1,32 +1,20 @@
-# 3D Hoodie Designer with AR
+# 3D Hoodie Designer
 
-A web-based 3D hoodie design tool that allows users to upload their 3D models or generate wireframe 3D models directly in the browser. The tool also enables AR visualization using the MacBook camera via WebAR.
+A web-based 3D hoodie design tool that allows users to upload their 3D models or generate wireframe models directly in the browser. This project is currently in Phase 1, focusing on the foundation and core 3D functionality.
 
-## Features
+## Features (Phase 1)
 
-- Create wireframe models of hoodies using Three.js
+- Create wireframe hoodie models using Three.js
 - Upload custom 3D hoodie models in GLTF/GLB format
-- Visualize hoodies in AR using the MacBook camera
-- Interact with 3D models (rotate, scale, move)
-- Body tracking for AR fitting
+- Manipulate 3D models (rotate, scale, move)
+- Toggle wireframe rendering mode
+- Responsive design for various screen sizes
 
 ## Technology Stack
 
 - **Frontend**: React, TypeScript, Vite
 - **3D Rendering**: Three.js
-- **AR**: WebXR, AR.js (fallback)
-- **Testing**: Jest, React Testing Library, Cypress
-
-## Project Structure
-
-The project follows a modular architecture with clear separation of concerns:
-
-- `/src/components`: React components for UI elements
-- `/src/services`: Core business logic and services
-- `/src/hooks`: Custom React hooks for shared functionality
-- `/src/utils`: Utility functions
-- `/docs`: Documentation including architectural decisions
-- `/tests`: Test suites organized by testing type
+- **Testing**: Jest, React Testing Library
 
 ## Getting Started
 
@@ -34,7 +22,7 @@ The project follows a modular architecture with clear separation of concerns:
 
 - Node.js (v18+)
 - npm or yarn
-- Modern web browser with WebXR support
+- Modern web browser (Chrome/Edge recommended)
 
 ### Installation
 
@@ -50,18 +38,76 @@ npm install
 npm run dev
 ```
 
+The application will be available at `http://localhost:3000`.
+
 ## Development
 
-See the [Developer Guide](./docs/guides/developer-guide.md) for detailed information on development workflows and practices.
+### Project Structure
 
-## Architecture
+```
+hoodie-designer/
+├── src/
+│   ├── components/       # React components
+│   │   ├── model/        # 3D model components
+│   │   ├── controls/     # UI controls
+│   │   └── upload/       # File upload components
+│   ├── services/         # Core business logic
+│   │   ├── model/        # Model handling
+│   │   └── file/         # File operations
+│   ├── hooks/            # Custom React hooks
+│   ├── stores/           # State management
+│   ├── types/            # TypeScript types
+│   ├── utils/            # Utility functions
+│   ├── App.tsx           # Main application component
+│   └── index.tsx         # Entry point
+├── tests/                # Test suites
+│   ├── unit/             # Unit tests
+│   ├── integration/      # Integration tests
+│   └── e2e/              # End-to-end tests
+└── public/               # Static assets
+```
 
-For detailed architecture information, see the [Architecture Overview](./docs/architecture-overview.md).
+### Available Scripts
+
+- `npm run dev` - Start development server
+- `npm run build` - Build production version
+- `npm run preview` - Preview production build
+- `npm test` - Run tests
+- `npm run lint` - Run linting
 
 ## Testing
 
-This project follows Test-Driven Development (TDD) principles. See the [Testing Guide](./docs/guides/testing-guide.md) for more information.
+This project follows Test-Driven Development (TDD) principles. Tests are organized into:
+
+- **Unit Tests**: Test individual functions and components
+- **Integration Tests**: Test interactions between components
+- **End-to-End Tests**: Test complete user flows
+
+Run tests with:
+
+```bash
+npm test
+```
+
+## Roadmap
+
+The project is divided into three phases:
+
+1. **Phase 1 (Current)**: Foundation and Core 3D Functionality
+   - Basic 3D rendering
+   - Model manipulation
+   - File upload/download
+
+2. **Phase 2**: AR Integration
+   - WebXR integration
+   - Body tracking
+   - AR visualization
+
+3. **Phase 3**: UI Refinement and Testing
+   - Improved user interface
+   - Comprehensive testing
+   - Cross-browser compatibility
 
 ## License
 
-[MIT License](LICENSE)
+This project is licensed under the MIT License - see the LICENSE file for details.
