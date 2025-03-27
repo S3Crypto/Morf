@@ -165,13 +165,6 @@ export const ModelUploader: React.FC<ModelUploaderProps> = ({
         handleFileSelect(event.dataTransfer.files);
     };
 
-    // Clean up object URLs on unmount
-    useEffect(() => {
-        return () => {
-            // Any cleanup needed
-        };
-    }, []);
-
     return (
         <div
             className={`model-uploader ${className}`}

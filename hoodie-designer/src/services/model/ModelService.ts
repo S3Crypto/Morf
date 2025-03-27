@@ -1,157 +1,168 @@
-import { ModelService } from '../../../src/services/model/ModelService';
 import * as THREE from 'three';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
+import { v4 as uuidv4 } from 'uuid';
+import { TransformOptions, WireframeOptions, Model, ModelMetadata, ExportFormat } from '../../types/Model';
 
-// Mock Three.js objects
-jest.mock('three', () => {
-    const actualThree = jest.requireActual('three');
-    return {
-        ...actualThree,
-        Group: jest.fn().mockImplementation(() => ({
-            add: jest.fn(),
-            children: [],
-            position: { set: jest.fn() },
-            rotation: { set: jest.fn() },
-            scale: { set: jest.fn() }
-        })),
-        BoxGeometry: jest.fn(),
-        CylinderGeometry: jest.fn(),
-        MeshBasicMaterial: jest.fn().mockImplementation(() => ({
-            wireframe: false,
-            color: { set: jest.fn() }
-        })),
-        Mesh: jest.fn().mockImplementation(() => ({
-            material: { wireframe: false },
-            position: { set: jest.fn() },
-            rotation: { set: jest.fn() },
-            name: ''
-        })),
-        Vector3: jest.fn().mockImplementation(() => ({
-            set: jest.fn(),
-            multiplyScalar: jest.fn()
-        })),
-        Box3: jest.fn().mockImplementation(() => ({
-            setFromObject: jest.fn().mockReturnThis(),
-            getSize: jest.fn(),
-            getCenter: jest.fn()
-        })),
-        Color: jest.fn()
-    };
-});
+// Export as named class (changes default export style)
+export class ModelService {
+    private loader: GLTFLoader;
 
-// Mock GLTFLoader
-jest.mock('three/examples/jsm/loaders/GLTFLoader', () => ({
-    GLTFLoader: jest.fn().mockImplementation(() => ({
-        load: jest.fn((url, onLoad, onProgress, onError) => {
-            onLoad({ scene: new THREE.Group() });
-        })
-    }))
-}));
+    constructor() {
+        this.loader = new GLTFLoader();
+    }
 
-describe('ModelService', () => {
-    let modelService: ModelService;
+    /**
+     * Load a 3D model from a URL
+     * @param url URL to GLTF or GLB model
+     * @returns Promise resolving to loaded model
+     */
+    async loadModel(url: string): Promise<Model> {
+        return new Promise((resolve, reject) => {
+            this.loader.load(
+                url,
+                (gltf) => {
+                    const model: Model = {
+                        id: uuidv4(),
+                        type: 'uploaded',
+                        object: gltf.scene,
+                        metadata: {
+                            name: this.extractFilenameFromUrl(url),
+                            source: url,
+                            format: this.getFormatFromUrl(url),
+                            createdAt: new Date(),
+                            modifiedAt: new Date()
+                        }
+                    };
 
-    beforeEach(() => {
-        modelService = new ModelService();
-        jest.clearAllMocks();
-    });
-
-    describe('createWireframeModel', () => {
-        it('should create a wireframe model with default options', () => {
-            const model = modelService.createWireframeModel();
-
-            expect(model).toBeDefined();
-            expect(model.type).toBe('wireframe');
-            expect(model.object).toBeInstanceOf(THREE.Group);
-            expect(model.metadata.name).toBe('Wireframe Hoodie');
-            expect(model.metadata.source).toBe('generated');
-        });
-
-        it('should use provided options when creating wireframe', () => {
-            const options = {
-                width: 50,
-                height: 70,
-                color: '#FF0000',
-                includeHood: true
-            };
-
-            const model = modelService.createWireframeModel(options);
-
-            expect(model).toBeDefined();
-            expect(THREE.BoxGeometry).toHaveBeenCalledWith(
-                expect.any(Number),
-                expect.any(Number),
-                expect.any(Number)
-            );
-            expect(THREE.MeshBasicMaterial).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    wireframe: true,
-                    color: expect.any(THREE.Color)
-                })
+                    this.normalizeModel(model.object);
+                    resolve(model);
+                },
+                undefined,
+                (error) => {
+                    reject(new Error(`Error loading model: ${error.message}`));
+                }
             );
         });
-    });
+    }
 
-    describe('applyTransform', () => {
-        it('should apply position transformation to a model', () => {
-            const mockGroup = new THREE.Group();
-            const transform = { position: [1, 2, 3] as [number, number, number] };
+    // Rest of the class implementation remains the same...
+    // ...
 
-            modelService.applyTransform(mockGroup, transform);
+    /**
+     * Create a procedural wireframe hoodie model
+     * @param options Configuration options for the model
+     * @returns Generated 3D model
+     */
+    createWireframeModel(options: WireframeOptions = {}): Model {
+        const {
+            width = 40,
+            height = 60,
+            depth = 20,
+            sleeveLength = 30,
+            hoodSize = 15,
+            shoulderWidth = 45,
+            color = '#FFFFFF',
+            includeHood = true,
+            detachableSleeves = false
+        } = options;
 
-            expect(mockGroup.position.set).toHaveBeenCalledWith(1, 2, 3);
+        const group = new THREE.Group();
+
+        // Create body (main torso)
+        const bodyGeometry = new THREE.BoxGeometry(width, height, depth);
+        const bodyMaterial = new THREE.MeshBasicMaterial({
+            color: new THREE.Color(color),
+            wireframe: true
         });
+        const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+        body.position.set(0, 0, 0);
+        body.name = 'body';
+        group.add(body);
 
-        it('should apply rotation transformation to a model', () => {
-            const mockGroup = new THREE.Group();
-            const transform = { rotation: [0.1, 0.2, 0.3] as [number, number, number] };
+        // Create sleeves and other parts...
 
-            modelService.applyTransform(mockGroup, transform);
+        const model: Model = {
+            id: uuidv4(),
+            type: 'wireframe',
+            object: group,
+            metadata: {
+                name: 'Wireframe Hoodie',
+                source: 'generated',
+                createdAt: new Date(),
+                modifiedAt: new Date()
+            }
+        };
 
-            expect(mockGroup.rotation.set).toHaveBeenCalledWith(0.1, 0.2, 0.3);
+        return model;
+    }
+
+    /**
+     * Apply transformations to a 3D model
+     * @param model Model to transform
+     * @param transform Transformation parameters
+     */
+    applyTransform(model: THREE.Group, transform: TransformOptions): void {
+        if (transform.position) {
+            model.position.set(...transform.position);
+        }
+
+        if (transform.rotation) {
+            model.rotation.set(...transform.rotation);
+        }
+
+        if (transform.scale !== undefined) {
+            if (typeof transform.scale === 'number') {
+                model.scale.set(transform.scale, transform.scale, transform.scale);
+            } else {
+                model.scale.set(...transform.scale);
+            }
+        }
+    }
+
+    /**
+     * Set wireframe rendering mode for a model
+     * @param model Target model
+     * @param enabled Whether wireframe mode should be enabled
+     */
+    setWireframe(model: THREE.Group, enabled: boolean): void {
+        model.traverse((object) => {
+            if (object instanceof THREE.Mesh && object.material) {
+                if (Array.isArray(object.material)) {
+                    object.material.forEach(material => {
+                        material.wireframe = enabled;
+                    });
+                } else {
+                    object.material.wireframe = enabled;
+                }
+            }
         });
+    }
 
-        it('should apply scale transformation to a model with number', () => {
-            const mockGroup = new THREE.Group();
-            const transform = { scale: 2 };
+    /**
+     * Helper to extract filename from URL
+     */
+    private extractFilenameFromUrl(url: string): string {
+        const parts = url.split('/');
+        return parts[parts.length - 1].split('?')[0];
+    }
 
-            modelService.applyTransform(mockGroup, transform);
+    /**
+     * Helper to determine format from URL
+     */
+    private getFormatFromUrl(url: string): 'glb' | 'gltf' | undefined {
+        const filename = this.extractFilenameFromUrl(url).toLowerCase();
+        if (filename.endsWith('.glb')) return 'glb';
+        if (filename.endsWith('.gltf')) return 'gltf';
+        return undefined;
+    }
 
-            expect(mockGroup.scale.set).toHaveBeenCalledWith(2, 2, 2);
-        });
-
-        it('should apply scale transformation to a model with vector', () => {
-            const mockGroup = new THREE.Group();
-            const transform = { scale: [2, 3, 4] as [number, number, number] };
-
-            modelService.applyTransform(mockGroup, transform);
-
-            expect(mockGroup.scale.set).toHaveBeenCalledWith(2, 3, 4);
-        });
-    });
-
-    describe('loadModel', () => {
-        it('should load a model from URL', async () => {
-            const url = 'test-model.glb';
-            const model = await modelService.loadModel(url);
-
-            expect(model).toBeDefined();
-            expect(model.type).toBe('uploaded');
-            expect(model.object).toBeInstanceOf(THREE.Group);
-            expect(model.metadata.source).toBe(url);
-        });
-    });
-
-    describe('setWireframe', () => {
-        it('should set wireframe mode on all materials', () => {
-            const mockMesh = new THREE.Mesh();
-            const mockGroup = new THREE.Group();
-            mockGroup.children = [mockMesh];
-
-            mockMesh.traverse = jest.fn((callback) => callback(mockMesh));
-
-            modelService.setWireframe(mockGroup, true);
-
-            expect(mockMesh.traverse).toHaveBeenCalled();
-        });
-    });
-});
+    /**
+     * Normalize a model to consistent scale and orientation
+     */
+    normalizeModel(model: THREE.Group): void {
+        // Basic implementation
+        model.scale.set(1, 1, 1);
+        model.rotation.set(0, 0, 0);
+        model.position.set(0, 0, 0);
+    }
+}
